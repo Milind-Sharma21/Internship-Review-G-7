@@ -13,6 +13,10 @@ export interface TenantContext {
 // The "shelf": tenantId -> promise of its open connection.
 const registry = new Map<string, Promise<TenantContext>>();
 
+function normalise(tenantId: string): string {
+  return tenantId.trim().toLowerCase();
+}
+
 async function openTenant(tenantId: string): Promise<TenantContext> {
   await connectMaster();
 
@@ -35,17 +39,45 @@ async function openTenant(tenantId: string): Promise<TenantContext> {
   return { tenantId, connection, models };
 }
 
-export function getTenantContext(tenantId: string): Promise<TenantContext> {
-  const key = tenantId.trim().toLowerCase();
+export async function getTenantContext(tenantId: string): Promise<TenantContext> {
+  const key = normalise(tenantId);
 
-  let context = registry.get(key);
-  if (!context) {
-    context = openTenant(key);
-    registry.set(key, context);
-    // if opening fails, remove it so the next call can try again
-    context.catch(() => registry.delete(key));
+  const cached = registry.get(key);
+  if (cached) {
+    const context = await cached;
+    if (context.connection.readyState === 1) {
+      return context; // 1 means "connected"
+    }
+    // The connection dropped: forget it, close it quietly, and open a fresh one.
+    if (registry.get(key) === cached) {
+      registry.delete(key);
+      context.connection.close().catch(() => undefined);
+    }
+    return getTenantContext(key);
   }
-  return context;
+
+  const fresh = openTenant(key);
+  registry.set(key, fresh);
+  // if opening fails, remove it so the next call can try again
+  fresh.catch(() => {
+    if (registry.get(key) === fresh) registry.delete(key);
+  });
+  return fresh;
+}
+
+export async function closeTenantConnection(tenantId: string): Promise<boolean> {
+  const key = normalise(tenantId);
+  const cached = registry.get(key);
+  if (!cached) return false;
+
+  registry.delete(key);
+  try {
+    const context = await cached;
+    await context.connection.close();
+  } catch {
+    // the connection never opened, so there is nothing to close
+  }
+  return true;
 }
 
 export function openTenantCount(): number {
@@ -53,7 +85,12 @@ export function openTenantCount(): number {
 }
 
 export async function closeAllTenantConnections(): Promise<void> {
-  const contexts = await Promise.all([...registry.values()]);
+  const entries = [...registry.values()];
   registry.clear();
-  await Promise.all(contexts.map((c) => c.connection.close()));
+  const results = await Promise.allSettled(entries);
+  await Promise.all(
+    results.map((r) =>
+      r.status === "fulfilled" ? r.value.connection.close() : Promise.resolve()
+    )
+  );
 }
