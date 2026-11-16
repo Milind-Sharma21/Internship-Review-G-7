@@ -1,14 +1,16 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
+import {app} from './app.js';
 
-const express = require('express');
+dotenv.config({
+    path: './.env'
+})
 
-const app = express();
-const port = process.env.PORT || 3000;
+
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.listen(port, () => {
-  console.log(`LedgerGuard backend is running at http://localhost:${port}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`LedgerGuard backend is running at http://localhost:${process.env.PORT || 3000}`);
 });
