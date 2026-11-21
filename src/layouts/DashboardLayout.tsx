@@ -1,0 +1,2 @@
+import { useState } from 'react';import { Outlet } from 'react-router-dom';import Navbar from '../components/Navbar';import Sidebar from '../components/Sidebar';
+export default function DashboardLayout(){const [collapsed,setCollapsed]=useState(false);return <div className={`app-shell ${collapsed?'nav-collapsed':''}`}><Sidebar collapsed={collapsed}/><main className="main-area"><Navbar onToggleSidebar={()=>setCollapsed(v=>!v)}/><div className="page-content"><Outlet/></div></main></div>}
