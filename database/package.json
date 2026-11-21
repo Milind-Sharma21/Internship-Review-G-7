@@ -3,11 +3,21 @@
   "version": "1.0.0",
   "description": "LedgerGuard database module",
   "main": "index.js",
-  "scripts": {
-    "db:test": "tsx src/scripts/testConnection.ts",
-    "db:play": "tsx src/scripts/playground.ts",
-    "build": "tsc --noEmit"
-  },
+ "scripts": {
+  "build": "tsc --noEmit",
+  "db:test": "tsx src/scripts/testConnection.ts",
+  "db:play": "tsx src/scripts/playground.ts",
+  "db:schema": "tsx src/scripts/schemaCheck.ts",
+  "db:tenants": "tsx src/scripts/tenantDemo.ts",
+  "db:lifecycle": "tsx src/scripts/lifecycleDemo.ts",
+  "db:idem": "tsx src/scripts/idempotencyDemo.ts",
+  "db:lock": "tsx src/scripts/lockDemo.ts",
+  "db:txn": "tsx src/scripts/transactionDemo.ts",
+  "db:audit": "tsx src/scripts/isolationAudit.ts",
+  "db:load": "tsx src/scripts/switchingLoadTest.ts",
+  "db:api": "tsx src/scripts/publicApiCheck.ts",
+  "verify": "npm run build && npm run db:schema && npm run db:tenants && npm run db:lifecycle && npm run db:idem && npm run db:lock && npm run db:txn && npm run db:audit && npm run db:load && npm run db:api"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
