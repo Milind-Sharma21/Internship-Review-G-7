@@ -7,6 +7,10 @@ import StatusBadge from './StatusBadge';
 
 const PAGE_SIZE = 5;
 
+function escapeCsvCell(value: string | number): string {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
 function matchesDate(dateLabel: string, selectedDate: string): boolean {
   if (!selectedDate) return true;
 
@@ -67,7 +71,9 @@ export default function TransactionTable({
       'ID,Company,Amount,Status,Date',
       ...filtered.map(
         (transaction) =>
-          `${transaction.id},${transaction.company},${transaction.amount},${transaction.status},${transaction.date}`,
+          [transaction.id, transaction.company, transaction.amount, transaction.status, transaction.date]
+            .map(escapeCsvCell)
+            .join(','),
       ),
     ].join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
